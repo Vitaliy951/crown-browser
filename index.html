@@ -274,15 +274,16 @@
 
     <!-- Навигационная панель браузера -->
     <div id="toolbar">
-        <button class="nav-btn" onclick="alert('Назад')">◀</button>
-        <button class="nav-btn" onclick="alert('Вперед')">▶</button>
-        <input type="text" id="address-bar" value="https://mincifry.gov.ru" />
+        <button class="nav-btn" onclick="document.getElementById('web-view').contentWindow.history.back()">◀</button>
+        <button class="nav-btn" onclick="document.getElementById('web-view').contentWindow.history.forward()">▶</button>
+        <input type="text" id="address-bar" value="https://mincifry.gov.ru" placeholder="Введите URL адрес..." />
         <button class="go-btn" onclick="navigate()">Перейти</button>
     </div>
 
     <!-- Основная рабочая область -->
     <div id="main-area">
-        <iframe id="web-view" src="about:blank""></iframe>
+        <!-- По умолчанию загружаем пустую страницу во избежание сетевых падений на Linux -->
+        <iframe id="web-view" src="about:blank"></iframe>
 
         <!-- Боковая ИИ-панель в стиле Copilot -->
         <div id="sidebar">
@@ -302,7 +303,7 @@
 
             <div class="input-container">
                 <div class="input-wrapper">
-                    <textarea id="user-input" rows="2" placeholder="Спросите ИИ о чем угодно..."></textarea>
+                    <textarea id="user-input" rows="2" placeholder="Спросите ИИ о чем угодно... (Enter для отправки)"></textarea>
                     <div class="input-footer">
                         <span class="input-hint">Данные не покидают ваш ПК</span>
                         <button class="send-btn" onclick="sendToAI()">▲</button>
@@ -315,27 +316,19 @@
     <script>
         const { ipcRenderer } = require('electron');
 
+        // Функция перехода по URL из адресной строки
         function navigate() {
-            const url = document.getElementById('address-bar').value;
+            let url = document.getElementById('address-bar').value.trim();
+            if (!url) return;
+            
+            // Если пользователь забыл указать протокол, добавляем его автоматически
+            if (!/^https?:\/\//i.test(url)) {
+                url = 'https://' + url;
+                document.getElementById('address-bar').value = url;
+            }
             document.getElementById('web-view').src = url;
         }
 
-        // Отправка запроса по нажатию Enter (без Shift)
-        document.getElementById('user-input').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendToAI();
-            }
-        });
-
-        async function sendToAI() {
-            const inputField = document.getElementById('user-input');
-            const outputField = document.getElementById('chat-output');
-            const loadingIndicator = document.getElementById('loading');
-            const prompt = inputField.value;
-            
-            if (!prompt.trim()) return;
-
-            // Выводим сообщение пользователя
-            const userDiv = document.createElement('div');
-            userDiv.className = 'message user';
+        // ОБРАБОТЧИК ДЛЯ АДРЕСНОЙ СТРОКИ: Переход по Enter
+        document.getElementById('address-bar').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
