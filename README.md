@@ -63,8 +63,9 @@ Ai-Browser-base
 +-----------------------------------------------------------------+
 
 ```
-```
+
 <div style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre;">
+```
 +-----------------------------------------------------------------+
 
 | ОС WINDOWS (Локально)                                           |
