@@ -48,6 +48,11 @@ function createWindow() {
     });
 
     mainWindow.loadFile('index.html');
+
+    // Проверяем загрузку iframe и обрабатываем сбои сети
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+        console.log(`[Браузер]: Ошибка загрузки стартовой страницы (${errorDescription}). Переключение в автономный режим.`);
+    });
 }
 
 // Кроссплатформенный промпт-инжиниринг рекламы
