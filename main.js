@@ -39,18 +39,18 @@ function createWindow() {
         title: "Отечественный ИИ-Браузер (Прототип MVP)",
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false,
-            webviewTag: true // Включаем поддержку безопасных веб-инъекций
+            contextIsolation: false
         }
     });
 
-    // Загружаем интерфейс
+    // Загружаем локальный интерфейс
     mainWindow.loadFile('index.html');
 
-    // БЛОКИРОВКА КРАША ПРИ ОТСУТСТВИИ СЕТИ
-    // Перехватываем ошибку загрузки встроенного контента и предотвращаем падение приложения
+    // ЗАЩИТА ОТ КРАША: Перехватываем ошибки сети встроенного контента
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
-        console.log(`[Автономный режим]: Не удалось загрузить ${validatedURL}. Приложение продолжает работу.`);
+        console.log(`[Автономный режим]: Не удалось загрузить ${validatedURL} (${errorDescription}). Браузер продолжает работу.`);
+        // Предотвращаем закрытие окна Electron
+        event.preventDefault(); 
     });
 }
 
