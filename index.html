@@ -314,21 +314,81 @@
     </div>
 
     <script>
-        const { ipcRenderer } = require('electron');
+       const { ipcRenderer } = require('electron');
 
-        // Функция перехода по URL из адресной строки
-        function navigate() {
-            let url = document.getElementById('address-bar').value.trim();
-            if (!url) return;
-            
-            // Если пользователь забыл указать протокол, добавляем его автоматически
-            if (!/^https?:\/\//i.test(url)) {
-                url = 'https://' + url;
-                document.getElementById('address-bar').value = url;
-            }
-            document.getElementById('web-view').src = url;
-        }
+// Автоматический фокус на поле ввода ИИ при старте приложения
+window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('user-input').focus();
+});
 
-        // ОБРАБОТЧИК ДЛЯ АДРЕСНОЙ СТРОКИ: Переход по Enter
-        document.getElementById('address-bar').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
+// Функция перехода по URL из адресной строки
+function navigate() {
+    let url = document.getElementById('address-bar').value.trim();
+    if (!url) return;
+    
+    if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+        document.getElementById('address-bar').value = url;
+    }
+    document.getElementById('web-view').src = url;
+}
+
+// ОБРАБОТЧИК ДЛЯ АДРЕСНОЙ СТРОКИ (Срабатывает гарантированно на Linux)
+document.getElementById('address-bar').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        navigate();
+    }
+});
+
+// ОБРАБОТЧИК ДЛЯ ИИ-ВВОДА (Срабатывает гарантированно на Linux)
+document.getElementById('user-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); // Полностью блокируем перенос строки
+    }
+});
+
+document.getElementById('user-input').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendToAI(); // Вызываем отправку при отпускании Enter
+    }
+});
+
+async function sendToAI() {
+    const inputField = document.getElementById('user-input');
+    const outputField = document.getElementById('chat-output');
+    const loadingIndicator = document.getElementById('loading');
+    const prompt = inputField.value.trim();
+    
+    if (!prompt) return;
+
+    // Очищаем поле ввода сразу, чтобы визуально зафиксировать отправку
+    inputField.value = '';
+
+    // Выводим сообщение пользователя
+    const userDiv = document.createElement('div');
+    userDiv.className = 'message user';
+    userDiv.innerText = prompt;
+    outputField.insertBefore(userDiv, loadingIndicator);
+    
+    // Включаем анимацию загрузки
+    loadingIndicator.style.display = 'block';
+    outputField.scrollTop = outputField.scrollHeight;
+
+    // Запрос к бэкенду Node.js
+    const response = await ipcRenderer.invoke('ask-ai', prompt);
+    
+    // Выключаем анимацию загрузки
+    loadingIndicator.style.display = 'none';
+
+    // Выводим ответ ИИ
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'message system';
+    aiDiv.innerText = response;
+    outputField.insertBefore(aiDiv, loadingIndicator);
+    
+    outputField.scrollTop = outputField.scrollHeight;
+}
+    </script>
+
